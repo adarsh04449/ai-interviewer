@@ -5,37 +5,51 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import {Form} from "@/components/ui/form"
 import Image from "next/image";
-import { Link } from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import FormField from "./FormField";
+import { useRouter } from "next/navigation";
 
-const formSchema = z.object({
-  username: z.string().min(2).max(50),
-})
 
-const AuthForm = ({type}:{type: FormType}) => {
-    // 1. Define your form.
+
+const authFormSchema = (type: FormType) => {
+    return z.object({
+        name: type === 'sign-up' ? z.string().min(3) : z.string().optional(),
+        email: z.string().email(),
+        password: z.string().min(3)
+    })
+}
+
+const AuthForm = ({ type }: { type: FormType }) => {
+    const formSchema = authFormSchema(type)
+    const router = useRouter();
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-        username: "",
+            name: "",
+            email: "",
+            password: "",
         },
     })
     
-    // 2. Define a submit handler.
+
     function onSubmit(values: z.infer<typeof formSchema>) {
-        // Do something with the form values.
-        // ✅ This will be type-safe and validated.
-        console.log(values)
+        try {
+            if (type === "sign-up") {
+                toast.success("Account created sucessfully. Please Sign in!")
+                router.push("/sign-in");
+            } else {
+                toast.success("Signed in sucessfully!")
+                router.push("/");
+            }
+
+        } catch (err) {
+            console.log(err);
+            toast.error(`There was an error: ${err}`)
+        }
     }
 
     const isSignIn = type === "sign-in";
@@ -50,17 +64,39 @@ const AuthForm = ({type}:{type: FormType}) => {
                 <h3>Practice job interview with AI</h3>
                 <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6 mt-4 form">
-                        {!isSignIn && <p>Name</p>}
-                        <p>Email</p>
-                        <p>Password</p>
+                        {!isSignIn && (
+                            <FormField
+                                control={form.control}
+                                label="Name"
+                                name="name"
+                                placeholder="Your Name"
+                            />
+                        )}
+                        <FormField
+                            control={form.control}
+                            label="Email"
+                            name="email"
+                            placeholder="Enter Your Email"
+                            type="email"
+                        />
 
-    
+                        <FormField
+                            control={form.control}
+                            label="Password"
+                            name="password"
+                            placeholder="Enter your password"
+                            type="password"
+                            
+                        />
                         <Button className="btn" type="submit">{isSignIn ? "Sign in" : "Create an Account"}</Button>
                 </form>
                 </Form>
                 <p className="text-center">
-                    {isSignIn ? "No account yet" : "Have an  account already"}
-                    <Link className="font-bold text-user-primary ml-1" href={!isSignIn ? "/sign-in" : "/sign-up"} />
+                    {isSignIn ? "No account yet?" : "Have an  account already?"}
+                    <Link className="font-bold text-user-primary ml-1" href={!isSignIn ? "/sign-in" : "/sign-up"} >
+                        {!isSignIn ? "Sign in" : "Sign up"}
+                    </Link>
+                        
                 </p>
             </div>
         </div>
